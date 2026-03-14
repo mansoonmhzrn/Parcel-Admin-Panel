@@ -1,4 +1,3 @@
-const { Pool } = require('pg');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const crypto = require('crypto');
@@ -10,6 +9,7 @@ let dbOps;
 
 if (isPostgres) {
     console.log('Using PostgreSQL Database (Neon/Cloud).');
+    const { Pool } = require('pg');
     const pool = new Pool({
         connectionString: process.env.DATABASE_URL,
         ssl: { rejectUnauthorized: false } // Required for Neon
@@ -53,7 +53,9 @@ if (isPostgres) {
         }
     };
 
-    initDb().catch(console.error);
+    initDb().catch(err => {
+        console.error('PostgreSQL Initialization Error:', err);
+    });
 
     dbOps = {
         addParcel: async (parcel) => {
