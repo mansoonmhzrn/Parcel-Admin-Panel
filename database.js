@@ -10,8 +10,9 @@ let dbOps;
 if (isPostgres) {
     console.log('Using PostgreSQL Database (Neon/Cloud).');
     const { Pool } = require('pg');
+    const connectionString = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_5ERB2UPwoqLS@ep-orange-wildflower-abbc7myx-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require";
     const pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
+        connectionString: connectionString,
         ssl: { rejectUnauthorized: false } // Required for Neon
     });
 
