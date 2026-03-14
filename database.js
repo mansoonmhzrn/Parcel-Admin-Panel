@@ -69,6 +69,10 @@ if (isPostgres) {
             await dbOps.logAction(id, 'CREATE', `Parcel created with barcode ${barcode}`);
             return id;
         },
+        getParcelByBarcode: async (barcode) => {
+            const res = await query(`SELECT id, barcode, carrier, tracking_id as "trackingId", status, timestamp FROM parcels WHERE barcode = $1`, [barcode]);
+            return res.rows[0];
+        },
         getAllParcels: async () => {
             const res = await query(`SELECT id, barcode, carrier, tracking_id as "trackingId", status, timestamp FROM parcels ORDER BY timestamp DESC`);
             return res.rows;
@@ -173,6 +177,9 @@ if (isPostgres) {
                     dbOps.logAction(id, 'CREATE', `Parcel created`).then(() => res(id));
                 }
             });
+        }),
+        getParcelByBarcode: (barcode) => new Promise((res, rej) => {
+            db.get(`SELECT * FROM parcels WHERE barcode = ?`, [barcode], (err, row) => err ? rej(err) : res(row));
         }),
         getAllParcels: () => new Promise((res, rej) => {
             db.all(`SELECT * FROM parcels ORDER BY timestamp DESC`, (err, rows) => err ? rej(err) : res(rows));

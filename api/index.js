@@ -64,6 +64,18 @@ app.post('/api/dispatch', asyncHandler(async (req, res) => {
     };
 
     try {
+        // Check for duplicates
+        const existing = await db.getParcelByBarcode(barcode);
+        if (existing) {
+            return res.status(409).json({ 
+                message: 'Parcel with this barcode is already registered',
+                existingParcel: {
+                    trackingId: existing.trackingId,
+                    timestamp: existing.timestamp
+                }
+            });
+        }
+
         await db.addParcel(newParcel);
         console.log(`[SAVED] Parcel ${barcode} via ${carrier}. Tracking ID: ${trackingId}`);
         res.status(201).json({ 
