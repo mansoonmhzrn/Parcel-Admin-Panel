@@ -9,12 +9,9 @@ let dbOps;
 if (isPostgres) {
     console.log('Using PostgreSQL Database (Neon/Cloud).');
     const { Pool } = require('pg');
-    const connectionString = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_5ERB2UPwoqLS@ep-orange-wildflower-abbc7myx-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
+    const connectionString = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_5ERB2UPwoqLS@ep-orange-wildflower-abbc7myx-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require";
     const pool = new Pool({
-        connectionString: connectionString,
-        max: 10,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 2000,
+        connectionString,
         ssl: { rejectUnauthorized: false }
     });
 
@@ -47,8 +44,9 @@ if (isPostgres) {
         )`);
 
         // Seed default admin
-        const adminCheck = await query("SELECT COUNT(*) FROM admins");
-        if (parseInt(adminCheck.rows[0].count) === 0) {
+        const adminCheck = await query("SELECT COUNT(*) as count FROM admins");
+        const count = parseInt(adminCheck.rows[0].count);
+        if (count === 0) {
             const defaultPass = crypto.createHash('sha256').update('admin123').digest('hex');
             await query("INSERT INTO admins (email, password, pin) VALUES ($1, $2, $3)", 
                 ['admin@warehouse.com', defaultPass, '1234']);
@@ -136,8 +134,15 @@ if (isPostgres) {
 } else {
     // Fallback to SQLite (Local Dev)
     console.log('Using SQLite Database (Local).');
-    const sqlite3 = require('sqlite3').verbose();
-    const dbPath = path.resolve(__dirname, 'parcels.db');
+    let sqlite3;
+    try {
+        sqlite3 = require('sqlite3').verbose();
+    } catch (e) {
+        console.warn('SQLite3 module not found. Local dev mode will be disabled.');
+        dbOps = { /* No-op ops to prevent crashes */ };
+        return;
+    }
+    const dbPath = path.resolve(process.cwd(), 'parcels.db');
     const db = new sqlite3.Database(dbPath);
 
     // ... (rest of the existing SQLite logic)

@@ -29,7 +29,7 @@ app.get('/api/health', asyncHandler(async (req, res) => {
 app.use(cors());
 app.use(bodyParser.json());
 // Serve static files (CSS, JS, Images)
-app.use(express.static(path.join(__dirname, './')));
+app.use(express.static(path.join(process.cwd(), './')));
 
 const authMiddleware = asyncHandler(async (req, res, next) => {
     const pin = req.headers['x-admin-pin'] || req.query.pin;
@@ -191,7 +191,7 @@ app.post('/api/admin/reset-pin', asyncHandler(async (req, res) => {
 
 // Serve index.html for any other routes (Handle PWA/Frontend routing)
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(process.cwd(), 'index.html'));
 });
 
 app.use((err, req, res, next) => {
@@ -199,7 +199,7 @@ app.use((err, req, res, next) => {
     res.status(500).json({ 
         message: 'Internal Server Error', 
         error: err.message,
-        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined 
+        stack: err.stack 
     });
 });
 
