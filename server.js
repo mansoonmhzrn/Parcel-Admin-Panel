@@ -190,10 +190,7 @@ app.post('/api/admin/reset-pin', asyncHandler(async (req, res) => {
 }));
 
 // Serve index.html for any other routes (Handle PWA/Frontend routing)
-// Serve index.html for any other routes (Handle PWA/Frontend routing)
-app.get(/^\/(?!api).*/, (req, res) => {
-    res.sendFile(path.join(process.cwd(), 'index.html'));
-});
+
 
 app.use((err, req, res, next) => {
     console.error('SERVER ERROR:', err); // Log full error object
