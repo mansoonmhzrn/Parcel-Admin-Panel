@@ -4,7 +4,7 @@ const cors = require('cors');
 const asyncHandler = require('express-async-handler');
 const path = require('path');
 const crypto = require('crypto');
-const db = require('./database');
+const db = require('../database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,8 +28,6 @@ app.get('/api/health', asyncHandler(async (req, res) => {
 
 app.use(cors());
 app.use(bodyParser.json());
-// Serve static files (CSS, JS, Images)
-app.use(express.static(path.join(process.cwd(), './')));
 
 const authMiddleware = asyncHandler(async (req, res, next) => {
     const pin = req.headers['x-admin-pin'] || req.query.pin;
@@ -188,9 +186,6 @@ app.post('/api/admin/reset-pin', asyncHandler(async (req, res) => {
     }
     res.status(401).json({ message: 'Invalid credentials' });
 }));
-
-// Serve index.html for any other routes (Handle PWA/Frontend routing)
-
 
 app.use((err, req, res, next) => {
     console.error('SERVER ERROR:', err); // Log full error object
