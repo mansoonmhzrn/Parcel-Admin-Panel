@@ -28,6 +28,8 @@ app.get('/api/health', asyncHandler(async (req, res) => {
 
 app.use(cors());
 app.use(bodyParser.json());
+// Serve static files from the public folder (for local development)
+app.use(express.static(path.join(__dirname, '../public')));
 
 const authMiddleware = asyncHandler(async (req, res, next) => {
     const pin = req.headers['x-admin-pin'] || req.query.pin;
