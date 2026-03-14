@@ -190,7 +190,8 @@ app.post('/api/admin/reset-pin', asyncHandler(async (req, res) => {
 }));
 
 // Serve index.html for any other routes (Handle PWA/Frontend routing)
-app.get('*', (req, res) => {
+// Serve index.html for any other routes (Handle PWA/Frontend routing)
+app.get(/^\/(?!api).*/, (req, res) => {
     res.sendFile(path.join(process.cwd(), 'index.html'));
 });
 
@@ -203,7 +204,11 @@ app.use((err, req, res, next) => {
     });
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-    console.log('Local Tracking System (Offline Mode) Ready.');
-});
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+    app.listen(PORT, () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+        console.log('Local Tracking System Ready.');
+    });
+}
+
+module.exports = app;
