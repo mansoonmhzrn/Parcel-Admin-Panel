@@ -1,4 +1,3 @@
-const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const crypto = require('crypto');
 
@@ -137,6 +136,7 @@ if (isPostgres) {
 } else {
     // Fallback to SQLite (Local Dev)
     console.log('Using SQLite Database (Local).');
+    const sqlite3 = require('sqlite3').verbose();
     const dbPath = path.resolve(__dirname, 'parcels.db');
     const db = new sqlite3.Database(dbPath);
 
