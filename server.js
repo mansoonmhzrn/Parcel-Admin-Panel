@@ -9,20 +9,25 @@ const db = require('./database');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.get('/api/health', asyncHandler(async (req, res) => {
+    try {
+        const parcels = await db.getAllParcels();
+        res.json({ 
+            status: 'healthy', 
+            database: !!process.env.DATABASE_URL ? 'postgres' : 'unknown',
+            parcelCount: parcels.length 
+        });
+    } catch (err) {
+        res.status(500).json({ 
+            status: 'error', 
+            message: err.message,
+            stack: err.stack 
+        });
+    }
+}));
+
 app.use(cors());
 app.use(bodyParser.json());
-// Serve static files from the root
-app.use(express.static(path.join(__dirname, './')));
-
-// Explicitly serve index.html for the root route to fix 404s on some deployments
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// Explicitly serve admin.html
-app.get('/admin.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin.html'));
-});
 
 const authMiddleware = asyncHandler(async (req, res, next) => {
     const pin = req.headers['x-admin-pin'] || req.query.pin;
@@ -180,23 +185,6 @@ app.post('/api/admin/reset-pin', asyncHandler(async (req, res) => {
         }
     }
     res.status(401).json({ message: 'Invalid credentials' });
-}));
-
-app.get('/api/health', asyncHandler(async (req, res) => {
-    try {
-        const parcels = await db.getAllParcels();
-        res.json({ 
-            status: 'healthy', 
-            database: !!process.env.DATABASE_URL ? 'postgres' : 'unknown',
-            parcelCount: parcels.length 
-        });
-    } catch (err) {
-        res.status(500).json({ 
-            status: 'error', 
-            message: err.message,
-            stack: err.stack 
-        });
-    }
 }));
 
 app.use((err, req, res, next) => {
