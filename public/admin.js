@@ -361,24 +361,40 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('confirm-reset-btn').addEventListener('click', async () => {
-        const email = document.getElementById('reset-email').value;
-        const password = document.getElementById('reset-password').value;
+        const email = document.getElementById('reset-email');
+        const password = document.getElementById('reset-password');
         const newPin = document.getElementById('reset-new-pin').value;
+        const modalContent = resetModal.querySelector('.modal-content');
 
         try {
             const response = await fetch('/api/admin/reset-pin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password, newPin })
+                body: JSON.stringify({ email: email.value, password: password.value, newPin })
             });
+
             if (response.ok) {
                 showToast('PIN reset successful! You can now log in.');
                 resetModal.classList.add('hidden');
+                // Clear errors on success
+                email.classList.remove('input-error');
+                password.classList.remove('input-error');
             } else {
                 const err = await response.json();
                 showToast(err.message || 'Reset failed', 'error');
+                
+                // Trigger premium UI feedback
+                modalContent.classList.add('shake');
+                email.classList.add('input-error');
+                password.classList.add('input-error');
+                
+                // Remove shake class after animation finishes so it can be re-triggered
+                setTimeout(() => modalContent.classList.remove('shake'), 500);
             }
-        } catch (e) { console.error(e); }
+        } catch (e) { 
+            console.error(e);
+            showToast('A network error occurred', 'error');
+        }
     });
 
     // Theme Toggle
