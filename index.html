@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warehouse Parcel Scanner</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <button id="theme-toggle" class="theme-btn" title="Toggle Theme">🌓</button>
+    <div class="container">
+        <header>
+            <div id="live-clock" class="digital-clock">00:00:00</div>
+            <h1>Parcel Dispatch</h1>
+            <p>Scan and track warehouse inventory</p>
+            <div style="margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                <input type="checkbox" id="batch-mode" style="width: auto; margin-bottom: 0;">
+                <label for="batch-mode" style="margin-bottom: 0; font-size: 0.875rem; font-weight: 600;">Batch Mode (Auto-Dispatch)</label>
+            </div>
+        </header>
+
+        <main>
+            <div id="reader"></div>
+            
+            <div id="result-container" class="hidden">
+                <div class="card glass">
+                    <h2>Scan Result</h2>
+                    <div class="result-data">
+                        <span class="label">Barcode:</span>
+                        <span id="scanned-barcode" class="value"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="carrier">Select Carrier</label>
+                        <select id="carrier">
+                            <option value="royal_mail">Royal Mail</option>
+                            <option value="evri">Evri</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <button id="dispatch-btn" class="primary-btn">Confirm Dispatch</button>
+                    <button id="rescan-btn" class="secondary-btn">Scan Again</button>
+                </div>
+            </div>
+
+            <div id="status-message" class="hidden"></div>
+            
+            <div style="text-align: center; margin-top: 2rem;">
+                <a href="admin.html" class="admin-link">Go to Admin Dashboard →</a>
+            </div>
+        </main>
+    </div>
+    <div id="toast-container"></div>
+    <script src="app.js"></script>
+</body>
+</html>

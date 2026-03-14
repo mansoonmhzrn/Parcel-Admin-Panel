@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parcel Admin Panel</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        .container { max-width: 1000px; }
+        #search-input { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); font-size: 1rem; margin-bottom: 2rem; }
+    </style>
+</head>
+<body>
+    <button id="theme-toggle" class="theme-btn" title="Toggle Theme">🌓</button>
+    <div class="container">
+        <div class="admin-header">
+            <div>
+                <div id="live-clock" class="digital-clock" style="margin-left:0; margin-bottom:0.5rem;">00:00:00</div>
+                <h1>Admin Panel</h1>
+            </div>
+            <div style="display:flex; gap:1rem;">
+                <button id="export-btn" class="secondary-btn" style="width:auto; margin-bottom:0;">Export CSV</button>
+                <button id="security-btn" class="secondary-btn" style="width:auto; margin-bottom:0;">Settings</button>
+                <button id="logout-btn" class="secondary-btn" style="width:auto; margin-bottom:0; background:#fef2f2; color:#b91c1c; border-color:#fee2e2;">Logout</button>
+                <a href="index.html" class="nav-link" style="align-self:center;">← Back to Scanner</a>
+            </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div id="analytics-grid" class="analytics-grid">
+            <div class="stat-card">
+                <span class="stat-label">Total Parcels</span>
+                <span id="stat-total" class="stat-value">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Scanned Today</span>
+                <span id="stat-today" class="stat-value">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Carrier Spread</span>
+                <div id="stat-carriers" class="mini-list"></div>
+            </div>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search by barcode or tracking ID...">
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-category="all">All Parcels</button>
+            <button class="tab-btn" data-category="evri">Evri</button>
+            <button class="tab-btn" data-category="royal_mail">Royal Mail</button>
+            <button class="tab-btn" data-category="audit">Audit Logs</button>
+        </div>
+
+        <div id="parcel-view">
+            <div class="table-container">
+                <table id="parcel-table">
+                    <thead>
+                        <tr>
+                            <th>Barcode</th>
+                            <th>Tracking ID</th>
+                            <th>Carrier</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="parcel-list">
+                        <!-- Loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="audit-view" class="hidden">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Parcel ID</th>
+                            <th>Action</th>
+                            <th>Details</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody id="audit-list">
+                        <!-- Loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="modal hidden">
+        <div class="modal-content glass">
+            <h2>Edit Parcel</h2>
+            <div class="form-group">
+                <label>Carrier</label>
+                <select id="edit-carrier">
+                    <option value="royal_mail">Royal Mail</option>
+                    <option value="evri">Evri</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Status</label>
+                <input type="text" id="edit-status" style="width:100%; padding:0.75rem; border-radius:8px; border:1px solid var(--border);">
+            </div>
+            <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+                <button id="save-edit-btn" class="primary-btn">Save Changes</button>
+                <button id="cancel-edit-btn" class="secondary-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="security-modal" class="modal hidden">
+        <div class="modal-content glass" style="max-width: 450px;">
+            <h2>Admin Settings</h2>
+            <div class="form-group">
+                <label>Change Admin PIN</label>
+                <input type="password" id="new-pin" placeholder="Enter new 4-digit PIN" style="width:100%; padding:0.75rem; border-radius:8px; border:1px solid var(--border);">
+            </div>
+            <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+                <button id="save-pin-btn" class="primary-btn">Update PIN</button>
+                <button id="close-security-btn" class="secondary-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset PIN Modal (Forgot PIN) -->
+    <div id="reset-modal" class="modal hidden" style="z-index: 2000;">
+        <div class="modal-content glass" style="max-width: 450px;">
+            <h2>Reset Admin PIN</h2>
+            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">Verify your admin account to set a new PIN.</p>
+            <div class="form-group">
+                <label>Admin Email</label>
+                <input type="email" id="reset-email" placeholder="admin@warehouse.com" style="width:100%; padding:0.75rem; border-radius:8px; border:1px solid var(--border);">
+            </div>
+            <div class="form-group">
+                <label>Admin Password</label>
+                <input type="password" id="reset-password" placeholder="••••••••" style="width:100%; padding:0.75rem; border-radius:8px; border:1px solid var(--border);">
+            </div>
+            <div class="form-group">
+                <label>New PIN</label>
+                <input type="password" id="reset-new-pin" placeholder="New 4-digit PIN" style="width:100%; padding:0.75rem; border-radius:8px; border:1px solid var(--border);">
+            </div>
+            <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+                <button id="confirm-reset-btn" class="primary-btn">Reset PIN</button>
+                <button id="close-reset-btn" class="secondary-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="admin.js"></script>
+</body>
+</html>
