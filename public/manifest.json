@@ -5,17 +5,23 @@
   "display": "standalone",
   "background_color": "#f8fafc",
   "theme_color": "#6366f1",
-  "description": "Offline-ready warehouse scanning and tracking system",
+  "description": "Professional internal logistics scanning and real-time inventory tracking system for authorized warehouse operations.",
+  "categories": ["business", "productivity", "utilities"],
+  "orientation": "portrait",
+  "dir": "ltr",
+  "lang": "en-US",
   "icons": [
     {
       "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "maskable any"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "maskable any"
     }
   ]
 }

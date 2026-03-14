@@ -3,7 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Secure Management Portal for the Warehouse Parcel Tracking System. Internal use only. Authorized personnel must proceed with secure credentials.">
+    <meta name="author" content="Warehouse Systems Architecture">
+    <meta name="robots" content="noindex, nofollow">
+    
+    <!-- Open Graph / Branding -->
+    <meta property="og:title" content="Warehouse Admin Control Panel">
+    <meta property="og:description" content="Secure internal logistics management and system configuration portal.">
+    <meta property="og:type" content="website">
+
     <title>Parcel Admin Panel</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -128,7 +138,7 @@
             </div>
             <button id="auth-submit-btn" class="primary-btn" style="margin-top: 1rem;">Unlock Dashboard</button>
             <p style="margin-top: 1.5rem; font-size: 0.8125rem;">
-                <a href="#" id="auth-forgot-link" style="color: var(--primary); text-decoration: none; font-weight: 500;">Forgot PIN? Reset Master Account</a>
+                <a href="#" id="auth-forgot-link" style="color: var(--primary); text-decoration: none; font-weight: 500;">Forgot PIN? Use System Recovery</a>
             </p>
         </div>
     </div>
@@ -147,13 +157,13 @@
         </div>
     </div>
 
-    <!-- Reset PIN Modal (Forgot PIN) -->
+    <!-- System PIN Recovery Modal -->
     <div id="reset-modal" class="modal hidden" style="z-index: 2000;">
         <div class="modal-content glass" style="max-width: 450px;">
-            <h2>Reset Admin PIN</h2>
-            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">Verify your admin account to set a new PIN.</p>
+            <h2>System Recovery</h2>
+            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">Verify system administrator credentials to update the security PIN.</p>
             <div class="form-group">
-                <label>Admin Email</label>
+                <label>Admin Username</label>
                 <input type="email" id="reset-email" placeholder="admin@warehouse.com" style="width:100%; padding:0.75rem; border-radius:8px; border:1px solid var(--border);">
             </div>
             <div class="form-group">
@@ -170,6 +180,12 @@
             </div>
         </div>
     </div>
+
+    <footer style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 4rem;">
+        <p><strong>Warehouse Security Portal v1.2.4</strong></p>
+        <p>© 2026 Logistics & Inventory Solutions. Authorized Administrator Access Only.</p>
+        <p style="margin-top: 0.5rem; opacity: 0.7;">System status: Secure • Database: Connected (Neon Cloud)</p>
+    </footer>
 
     <div id="toast-container"></div>
     <script src="admin.js"></script>
