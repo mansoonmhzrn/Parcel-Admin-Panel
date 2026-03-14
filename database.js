@@ -2,18 +2,21 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const crypto = require('crypto');
 
-// Check if we have a PostgreSQL connection string (provided by Neon/Vercel)
-const isPostgres = !!process.env.DATABASE_URL;
+// Check if we have a PostgreSQL connection string or are on Vercel
+const isPostgres = !!process.env.DATABASE_URL || !!process.env.VERCEL;
 
 let dbOps;
 
 if (isPostgres) {
     console.log('Using PostgreSQL Database (Neon/Cloud).');
     const { Pool } = require('pg');
-    const connectionString = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_5ERB2UPwoqLS@ep-orange-wildflower-abbc7myx-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require";
+    const connectionString = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_5ERB2UPwoqLS@ep-orange-wildflower-abbc7myx-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
     const pool = new Pool({
         connectionString: connectionString,
-        ssl: { rejectUnauthorized: false } // Required for Neon
+        max: 10,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 2000,
+        ssl: { rejectUnauthorized: false }
     });
 
     const query = (text, params) => pool.query(text, params);

@@ -182,6 +182,23 @@ app.post('/api/admin/reset-pin', asyncHandler(async (req, res) => {
     res.status(401).json({ message: 'Invalid credentials' });
 }));
 
+app.get('/api/health', asyncHandler(async (req, res) => {
+    try {
+        const parcels = await db.getAllParcels();
+        res.json({ 
+            status: 'healthy', 
+            database: !!process.env.DATABASE_URL ? 'postgres' : 'unknown',
+            parcelCount: parcels.length 
+        });
+    } catch (err) {
+        res.status(500).json({ 
+            status: 'error', 
+            message: err.message,
+            stack: err.stack 
+        });
+    }
+}));
+
 app.use((err, req, res, next) => {
     console.error('SERVER ERROR:', err); // Log full error object
     res.status(500).json({ 
