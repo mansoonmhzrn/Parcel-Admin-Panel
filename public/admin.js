@@ -9,34 +9,68 @@ document.addEventListener('DOMContentLoaded', () => {
     let editingId = null;
     let currentCategory = 'all';
 
+    const authModal = document.getElementById('auth-modal');
+    const authPinInput = document.getElementById('auth-pin-input');
+    const authSubmitBtn = document.getElementById('auth-submit-btn');
+    const authForgotLink = document.getElementById('auth-forgot-link');
+    const resetModal = document.getElementById('reset-modal');
+    
     let adminPin = sessionStorage.getItem('adminPin');
-    let authPromise = null;
     const logoutBtn = document.getElementById('logout-btn');
+
+    async function showPinModal() {
+        return new Promise((resolve) => {
+            authModal.classList.remove('hidden');
+            authPinInput.value = '';
+            authPinInput.focus();
+
+            const handleSubmit = async () => {
+                const pin = authPinInput.value;
+                if (!pin) return;
+
+                try {
+                    const response = await fetch('/api/verify-pin', {
+                        headers: { 'x-admin-pin': pin }
+                    });
+
+                    if (response.ok) {
+                        adminPin = pin;
+                        sessionStorage.setItem('adminPin', adminPin);
+                        authModal.classList.add('hidden');
+                        authSubmitBtn.removeEventListener('click', handleSubmit);
+                        authPinInput.removeEventListener('keypress', handleEnter);
+                        authForgotLink.removeEventListener('click', handleForgot);
+                        resolve();
+                    } else {
+                        // Shake and Glow feedback
+                        const modalContent = authModal.querySelector('.modal-content');
+                        modalContent.classList.add('shake');
+                        authPinInput.classList.add('input-error');
+                        setTimeout(() => modalContent.classList.remove('shake'), 500);
+                        authPinInput.value = '';
+                        authPinInput.focus();
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert('Network error during authentication');
+                }
+            };
+
+            const handleEnter = (e) => { if (e.key === 'Enter') handleSubmit(); };
+            const handleForgot = (e) => {
+                e.preventDefault();
+                resetModal.classList.remove('hidden');
+            };
+
+            authSubmitBtn.addEventListener('click', handleSubmit);
+            authPinInput.addEventListener('keypress', handleEnter);
+            authForgotLink.addEventListener('click', handleForgot);
+        });
+    }
 
     async function checkAuth() {
         if (adminPin) return;
-        if (authPromise) return authPromise;
-
-        authPromise = new Promise((resolve) => {
-            const pin = prompt('Enter Admin PIN to access dashboard (Default: 1234).\nType "RESET" if you forgot your PIN:');
-            if (pin === 'RESET') {
-                document.getElementById('reset-modal').classList.remove('hidden');
-                // We'll resolve once they reset, but for now we block
-                authPromise = null;
-                resolve();
-            } else if (pin) {
-                adminPin = pin;
-                sessionStorage.setItem('adminPin', adminPin);
-                authPromise = null;
-                resolve();
-            } else {
-                window.location.href = 'index.html';
-                authPromise = null;
-                resolve();
-            }
-        });
-
-        return authPromise;
+        await showPinModal();
     }
 
     async function secureFetch(url, options = {}) {
@@ -51,9 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (response.status === 401) {
             sessionStorage.removeItem('adminPin');
             adminPin = null;
-            // Only alert and retry if we haven't just failed
             if (!options._is_retry) {
-                alert('Invalid PIN. Please try again.');
                 await checkAuth();
                 if (adminPin) {
                     return await secureFetch(url, { ...options, _is_retry: true });
@@ -333,7 +365,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Security Settings
     const securityBtn = document.getElementById('security-btn');
     const securityModal = document.getElementById('security-modal');
-    const resetModal = document.getElementById('reset-modal');
     
     securityBtn.addEventListener('click', () => securityModal.classList.remove('hidden'));
     document.getElementById('close-security-btn').addEventListener('click', () => securityModal.classList.add('hidden'));

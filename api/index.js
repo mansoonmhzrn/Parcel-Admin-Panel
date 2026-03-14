@@ -149,6 +149,10 @@ app.get('/api/audit', authMiddleware, asyncHandler(async (req, res) => {
     }
 }));
 
+app.get('/api/verify-pin', authMiddleware, (req, res) => {
+    res.json({ message: 'PIN verified successfully', admin: req.admin.email });
+});
+
 // Admin Controls
 app.post('/api/admin/login', asyncHandler(async (req, res) => {
     const { email, password } = req.body;

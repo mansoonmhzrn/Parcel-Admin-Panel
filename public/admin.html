@@ -117,6 +117,22 @@
         </div>
     </div>
 
+    <!-- Custom PIN Entry Modal -->
+    <div id="auth-modal" class="modal hidden" style="z-index: 3000;">
+        <div class="modal-content glass" style="max-width: 400px; text-align: center;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">🔐</div>
+            <h2>Admin Authentication</h2>
+            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1.5rem;">Enter your 4-digit security PIN to access the dashboard.</p>
+            <div class="form-group">
+                <input type="password" id="auth-pin-input" placeholder="••••" maxlength="4" style="width:100%; padding:1rem; border-radius:12px; border:2px solid var(--border); text-align:center; font-size:1.5rem; letter-spacing:0.5rem;">
+            </div>
+            <button id="auth-submit-btn" class="primary-btn" style="margin-top: 1rem;">Unlock Dashboard</button>
+            <p style="margin-top: 1.5rem; font-size: 0.8125rem;">
+                <a href="#" id="auth-forgot-link" style="color: var(--primary); text-decoration: none; font-weight: 500;">Forgot PIN? Reset Master Account</a>
+            </p>
+        </div>
+    </div>
+
     <div id="security-modal" class="modal hidden">
         <div class="modal-content glass" style="max-width: 450px;">
             <h2>Admin Settings</h2>
