@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const resetModal = document.getElementById('reset-modal');
     
     let adminPin = sessionStorage.getItem('adminPin');
+    let currentRole = sessionStorage.getItem('adminRole') || 'staff';
     const logoutBtn = document.getElementById('logout-btn');
 
     async function showPinModal() {
@@ -34,9 +35,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
 
                     if (response.ok) {
+                        const data = await response.json();
                         adminPin = pin;
+                        currentRole = data.role;
                         sessionStorage.setItem('adminPin', adminPin);
+                        sessionStorage.setItem('adminRole', currentRole);
+                        
                         authModal.classList.add('hidden');
+                        applyRolePermissions();
+                        
                         authSubmitBtn.removeEventListener('click', handleSubmit);
                         authPinInput.removeEventListener('keypress', handleEnter);
                         authForgotLink.removeEventListener('click', handleForgot);
@@ -52,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 } catch (e) {
                     console.error(e);
-                    alert('Network error during authentication');
+                    showToast('Network error during authentication', 'error');
                 }
             };
 
@@ -68,8 +75,30 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function applyRolePermissions() {
+        const badge = document.getElementById('role-badge');
+        badge.textContent = currentRole === 'admin' ? 'System Administrator' : 'Warehouse Staff';
+        badge.className = `role-badge ${currentRole}`;
+
+        const adminOnlyElements = document.querySelectorAll('.admin-only');
+        adminOnlyElements.forEach(el => {
+            if (currentRole === 'admin') {
+                el.classList.remove('hidden');
+            } else {
+                el.classList.add('hidden');
+            }
+        });
+
+        if (currentRole === 'admin') {
+            loadUsers();
+        }
+    }
+
     async function checkAuth() {
-        if (adminPin) return;
+        if (adminPin) {
+            applyRolePermissions();
+            return;
+        }
         await showPinModal();
     }
 
@@ -84,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (response.status === 401) {
             sessionStorage.removeItem('adminPin');
+            sessionStorage.removeItem('adminRole');
             adminPin = null;
             if (!options._is_retry) {
                 await checkAuth();
@@ -97,6 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     logoutBtn.addEventListener('click', () => {
         sessionStorage.removeItem('adminPin');
+        sessionStorage.removeItem('adminRole');
         window.location.href = 'index.html';
     });
 
@@ -188,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${parcel.carrier.replace('_', ' ').toUpperCase()}</td>
                 <td><span class="status-badge">${parcel.status}</span></td>
                 <td style="font-size: 0.8125rem;">${new Date(parcel.timestamp).toLocaleString()}</td>
-                <td class="actions">
+                <td class="actions admin-only ${currentRole !== 'admin' ? 'hidden' : ''}">
                     <button class="action-btn edit-btn">Edit</button>
                     <button class="action-btn print-btn" style="background:var(--success)">Print</button>
                     <button class="action-btn delete-btn">Delete</button>
@@ -200,13 +231,72 @@ document.addEventListener('DOMContentLoaded', () => {
             const pb = row.querySelector('.print-btn');
             const dbBtn = row.querySelector('.delete-btn');
             
-            eb.onclick = () => openEdit(parcel);
-            pb.onclick = () => openPrintLabel(parcel);
-            dbBtn.onclick = () => deleteParcel(parcel.id);
+            if (eb) eb.onclick = () => openEdit(parcel);
+            if (pb) pb.onclick = () => openPrintLabel(parcel);
+            if (dbBtn) dbBtn.onclick = () => deleteParcel(parcel.id);
 
             parcelList.appendChild(row);
         });
     }
+
+    async function loadUsers() {
+        if (currentRole !== 'admin') return;
+        try {
+            const response = await secureFetch('/api/admin/users');
+            if (!response.ok) return;
+            const users = await response.json();
+            const list = document.getElementById('user-list-body');
+            list.innerHTML = users.map(u => `
+                <tr>
+                    <td>${u.email}</td>
+                    <td><span class="role-badge ${u.role}">${u.role}</span></td>
+                    <td>
+                        ${u.email !== sessionStorage.getItem('adminEmail') ? `<button class="action-btn" onclick="deleteUser('${u.email}')" style="background:#ef4444; font-size: 0.7rem; padding: 0.4rem 0.8rem;">Remove</button>` : '<span style="color:var(--text-muted); font-size:0.7rem;">(Self)</span>'}
+                    </td>
+                </tr>
+            `).join('');
+        } catch (e) { console.error(e); }
+    }
+
+    document.getElementById('create-user-btn').addEventListener('click', async () => {
+        const email = document.getElementById('new-user-email').value;
+        const password = document.getElementById('new-user-pass').value;
+        const pin = document.getElementById('new-user-pin').value;
+        const role = document.getElementById('new-user-role').value;
+
+        if (!email || !password || !pin) return showToast('All fields are required', 'error');
+        if (pin.length < 4) return showToast('PIN must be 4 digits', 'error');
+
+        try {
+            const response = await secureFetch('/api/admin/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, pin, role })
+            });
+
+            if (response.ok) {
+                showToast('Account created successfully');
+                document.getElementById('new-user-email').value = '';
+                document.getElementById('new-user-pass').value = '';
+                document.getElementById('new-user-pin').value = '';
+                loadUsers();
+            } else {
+                const err = await response.json();
+                showToast(err.message || 'Failed to create account', 'error');
+            }
+        } catch (e) { console.error(e); }
+    });
+
+    window.deleteUser = async (email) => {
+        if (!confirm(`Are you sure you want to remove access for ${email}?`)) return;
+        try {
+            const response = await secureFetch(`/api/admin/users/${email}`, { method: 'DELETE' });
+            if (response.ok) {
+                showToast('Account removed');
+                loadUsers();
+            }
+        } catch (e) { console.error(e); }
+    };
 
     searchInput.addEventListener('input', updateDisplay);
 

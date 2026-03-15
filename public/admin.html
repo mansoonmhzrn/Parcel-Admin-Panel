@@ -28,10 +28,11 @@
         <div class="admin-header">
             <div>
                 <div id="live-clock" class="digital-clock" style="margin-left:0; margin-bottom:0.5rem;">00:00:00</div>
-                <h1>Admin Panel</h1>
+                <h1>Admin Control Panel</h1>
+                <div id="role-badge" class="role-badge">Admin</div>
             </div>
             <div style="display:flex; gap:1rem;">
-                <button id="export-btn" class="secondary-btn" style="width:auto; margin-bottom:0;">Export CSV</button>
+                <button id="export-btn" class="secondary-btn admin-only" style="width:auto; margin-bottom:0;">Export CSV</button>
                 <button id="security-btn" class="secondary-btn" style="width:auto; margin-bottom:0;">Settings</button>
                 <button id="logout-btn" class="secondary-btn" style="width:auto; margin-bottom:0; background:#fef2f2; color:#b91c1c; border-color:#fee2e2;">Logout</button>
                 <a href="index.html" class="nav-link" style="align-self:center;">← Back to Scanner</a>
@@ -58,14 +59,14 @@
             <input type="text" id="search-input" placeholder="Search by barcode or tracking ID...">
         </div>
 
-        <div class="tabs">
-            <button class="tab-btn active" data-category="all">All Parcels</button>
-            <button class="tab-btn" data-category="evri">Evri</button>
-            <button class="tab-btn" data-category="royal_mail">Royal Mail</button>
-            <button class="tab-btn" data-category="audit">Audit Logs</button>
-        </div>
-
-        <div id="parcel-view">
+        <!-- Parcel Logs Section -->
+        <div id="parcel-view" class="admin-card">
+            <div class="card-header">
+                <h3>Dispatch Records</h3>
+                <div class="header-actions">
+                    <button id="view-audit-btn" class="secondary-btn btn-sm-admin admin-only">📋 Audit History</button>
+                </div>
+            </div>
             <div class="table-container">
                 <table id="parcel-table">
                     <thead>
@@ -75,7 +76,7 @@
                             <th>Carrier</th>
                             <th>Status</th>
                             <th>Date</th>
-                            <th>Actions</th>
+                            <th class="admin-only">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="parcel-list">
@@ -85,9 +86,56 @@
             </div>
         </div>
 
-        <div id="audit-view" class="hidden">
+        <!-- Account Management (Admin Only) -->
+        <div id="user-management-section" class="admin-card admin-only hidden" style="margin-top: 2rem;">
+            <h3>Staff & Access Management</h3>
+            <p style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 1.5rem;">Configure accounts and security pins for warehouse personnel.</p>
+            
+            <div class="user-form glass" style="padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid var(--border);">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div class="form-group">
+                        <label style="font-size: 0.75rem;">Account Email</label>
+                        <input type="email" id="new-user-email" placeholder="staff@warehouse.com" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid var(--border);">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.75rem;">Password</label>
+                        <input type="password" id="new-user-pass" placeholder="••••••••" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid var(--border);">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.75rem;">Access PIN</label>
+                        <input type="text" id="new-user-pin" placeholder="4 Digits" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid var(--border);">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.75rem;">System Role</label>
+                        <select id="new-user-role" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid var(--border); background:white;">
+                            <option value="staff">Staff (Scanner Only)</option>
+                            <option value="admin">Administrator (Full Access)</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="create-user-btn" class="primary-btn" style="margin-top: 1.5rem; width: auto; padding: 0.75rem 2rem;">Create Account</button>
+            </div>
+
             <div class="table-container">
                 <table>
+                    <thead>
+                        <tr>
+                            <th>Account</th>
+                            <th>Role</th>
+                            <th>Operations</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-list-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Audit History (Admin Only) -->
+        <div id="audit-view" class="admin-card admin-only hidden" style="margin-top: 2rem;">
+            <h3>System Audit Logs</h3>
+            <div class="table-container">
+                <table>
+...
                     <thead>
                         <tr>
                             <th>Parcel ID</th>

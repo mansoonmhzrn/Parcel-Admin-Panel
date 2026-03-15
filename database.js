@@ -40,16 +40,22 @@ if (isPostgres) {
             id SERIAL PRIMARY KEY,
             email TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
-            pin TEXT NOT NULL
+            pin TEXT NOT NULL,
+            role TEXT DEFAULT 'staff'
         )`);
+
+        // Migration: Add role column if it doesn't exist
+        try {
+            await query("ALTER TABLE admins ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'staff'");
+        } catch (e) { /* Might fail on older pg but create table handle it */ }
 
         // Seed default admin
         const adminCheck = await query("SELECT COUNT(*) as count FROM admins");
         const count = parseInt(adminCheck.rows[0].count);
         if (count === 0) {
             const defaultPass = crypto.createHash('sha256').update('admin123').digest('hex');
-            await query("INSERT INTO admins (email, password, pin) VALUES ($1, $2, $3)", 
-                ['admin@warehouse.com', defaultPass, '1234']);
+            await query("INSERT INTO admins (email, password, pin, role) VALUES ($1, $2, $3, $4)", 
+                ['admin@warehouse.com', defaultPass, '1234', 'admin']);
             console.log('Default admin seeded.');
         }
     };
@@ -132,6 +138,20 @@ if (isPostgres) {
         updateAdminPassword: async (email, newPasswordHash) => {
             const res = await query("UPDATE admins SET password = $1 WHERE email = $2", [newPasswordHash, email]);
             return res.rowCount;
+        },
+        createAdmin: async (admin) => {
+            const { email, password, pin, role } = admin;
+            const res = await query("INSERT INTO admins (email, password, pin, role) VALUES ($1, $2, $3, $4) RETURNING id", 
+                [email, password, pin, role]);
+            return res.rows[0].id;
+        },
+        deleteAdmin: async (email) => {
+            const res = await query("DELETE FROM admins WHERE email = $1", [email]);
+            return res.rowCount;
+        },
+        getAllAdmins: async () => {
+            const res = await query("SELECT email, role FROM admins");
+            return res.rows;
         }
     };
 
@@ -154,12 +174,20 @@ if (isPostgres) {
         db.serialize(() => {
             db.run(`CREATE TABLE IF NOT EXISTS parcels (id INTEGER PRIMARY KEY AUTOINCREMENT, barcode TEXT, carrier TEXT, trackingId TEXT UNIQUE, status TEXT, timestamp TEXT)`);
             db.run(`CREATE TABLE IF NOT EXISTS audit_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, parcel_id INTEGER, action TEXT, details TEXT, timestamp TEXT)`);
-            db.run(`CREATE TABLE IF NOT EXISTS admins (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE, password TEXT, pin TEXT)`);
+            db.run(`CREATE TABLE IF NOT EXISTS admins (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE, password TEXT, pin TEXT, role TEXT DEFAULT 'staff')`);
             
+            // Migration: Add role column to SQLite
+            db.get("PRAGMA table_info(admins)", (err, rows) => {
+                const hasRole = rows && rows.some(r => r.name === 'role');
+                if (!hasRole) {
+                    db.run("ALTER TABLE admins ADD COLUMN role TEXT DEFAULT 'staff'");
+                }
+            });
+
             db.get("SELECT COUNT(*) as count FROM admins", (err, row) => {
                 if (!err && row.count === 0) {
                     const defaultPass = crypto.createHash('sha256').update('admin123').digest('hex');
-                    db.run("INSERT INTO admins (email, password, pin) VALUES (?, ?, ?)", ['admin@warehouse.com', defaultPass, '1234']);
+                    db.run("INSERT INTO admins (email, password, pin, role) VALUES (?, ?, ?, ?)", ['admin@warehouse.com', defaultPass, '1234', 'admin']);
                 }
             });
         });
@@ -223,6 +251,18 @@ if (isPostgres) {
         }),
         updateAdminPassword: (email, newPasswordHash) => new Promise((res, rej) => {
             db.run("UPDATE admins SET password = ? WHERE email = ?", [newPasswordHash, email], function(err) { err ? rej(err) : res(this.changes); });
+        }),
+        createAdmin: (admin) => new Promise((res, rej) => {
+            const { email, password, pin, role } = admin;
+            db.run("INSERT INTO admins (email, password, pin, role) VALUES (?, ?, ?, ?)", [email, password, pin, role], function(err) {
+                err ? rej(err) : res(this.lastID);
+            });
+        }),
+        deleteAdmin: (email) => new Promise((res, rej) => {
+            db.run("DELETE FROM admins WHERE email = ?", [email], function(err) { err ? rej(err) : res(this.changes); });
+        }),
+        getAllAdmins: () => new Promise((res, rej) => {
+            db.all("SELECT email, role FROM admins", (err, rows) => err ? rej(err) : res(rows));
         })
     };
 }

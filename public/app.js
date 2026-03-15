@@ -39,6 +39,84 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { console.warn('Audio not supported', e); }
     }
 
+    // --- IndexedDB for Offline Queue ---
+    const DB_NAME = 'ParcelTrackerOffline';
+    const STORE_NAME = 'scanQueue';
+    let db;
+
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = (e) => {
+        db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+        }
+    };
+    request.onsuccess = (e) => { db = e.target.result; syncQueue(); };
+    request.onerror = (e) => console.error('IndexedDB error:', e);
+
+    async function addToQueue(parcel) {
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            const request = store.add(parcel);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject();
+        });
+    }
+
+    async function getQueue() {
+        return new Promise((resolve) => {
+            const tx = db.transaction(STORE_NAME, 'readonly');
+            const store = tx.objectStore(STORE_NAME);
+            const request = store.getAll();
+            request.onsuccess = () => resolve(request.result);
+        });
+    }
+
+    async function removeFromQueue(id) {
+        return new Promise((resolve) => {
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            const request = store.delete(id);
+            request.onsuccess = () => resolve();
+        });
+    }
+
+    async function syncQueue() {
+        if (!navigator.onLine || isProcessing) return;
+        const queue = await getQueue();
+        if (queue.length === 0) {
+            document.getElementById('sync-badge').classList.add('hidden');
+            return;
+        }
+
+        document.getElementById('sync-badge').classList.remove('hidden');
+        document.getElementById('sync-count').textContent = queue.length;
+
+        for (const item of queue) {
+            try {
+                const response = await fetch('/api/dispatch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ barcode: item.barcode, carrier: item.carrier })
+                });
+                if (response.ok || response.status === 409) {
+                    await removeFromQueue(item.id);
+                }
+            } catch (e) { break; } // Stop if network fails again
+        }
+        
+        const remaining = await getQueue();
+        if (remaining.length === 0) {
+            document.getElementById('sync-badge').classList.add('hidden');
+            showToast('All offline scans synced successfully!', 'success');
+        } else {
+            document.getElementById('sync-count').textContent = remaining.length;
+        }
+    }
+
+    window.addEventListener('online', syncQueue);
+
     let lastScannedBarcode = null;
     let lastScanTime = 0;
     let isProcessing = false;
@@ -103,30 +181,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.ok) {
                 showStatus(`Successfully dispatched! ${data.trackingId}`, 'success');
-                if (!isBatch) {
-                    setTimeout(() => {
-                        resultContainer.classList.add('hidden');
-                        document.getElementById('reader').classList.remove('hidden');
-                        reader.render(onScanSuccess, onScanFailure);
-                        hideStatus();
-                        isProcessing = false;
-                    }, 2000);
-                } else {
-                    // In batch mode, keep scanning but wait a bit
-                    setTimeout(() => {
-                        hideStatus();
-                        isProcessing = false;
-                    }, 1500);
-                }
-            } else {
-                showStatus(`Error: ${data.message}`, 'error');
+                finishDispatch(isBatch);
+            } else if (response.status === 409) {
+                showStatus(data.message, 'error');
                 playSound('error');
-                isProcessing = false;
+                finishDispatch(isBatch);
+            } else {
+                throw new Error('Server error');
             }
         } catch (error) {
-            showStatus('Network error. Is the server running?', 'error');
-            playSound('error');
-            isProcessing = false;
+            // Save to offline queue
+            await addToQueue({ barcode, carrier, timestamp: new Date().toISOString() });
+            showStatus('Offline: Scan saved to local queue', 'info');
+            syncQueue(); // Try to show badge
+            finishDispatch(isBatch);
+        }
+    }
+
+    function finishDispatch(isBatch) {
+        if (!isBatch) {
+            setTimeout(() => {
+                resultContainer.classList.add('hidden');
+                document.getElementById('reader').classList.remove('hidden');
+                reader.render(onScanSuccess, onScanFailure);
+                hideStatus();
+                isProcessing = false;
+            }, 2000);
+        } else {
+            setTimeout(() => {
+                hideStatus();
+                isProcessing = false;
+            }, 1500);
         }
     }
 

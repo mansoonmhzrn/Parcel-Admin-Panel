@@ -26,6 +26,12 @@
             <div id="live-clock" class="digital-clock">00:00:00</div>
             <h1>Parcel Dispatch</h1>
             <p>Scan and track warehouse inventory</p>
+            
+            <div id="sync-badge" class="sync-badge hidden">
+                <span class="sync-icon">🔄</span>
+                <span id="sync-count">0</span> pending scans
+            </div>
+
             <div style="margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
                 <input type="checkbox" id="batch-mode" style="width: auto; margin-bottom: 0;">
                 <label for="batch-mode" style="margin-bottom: 0; font-size: 0.875rem; font-weight: 600;">Batch Mode (Auto-Dispatch)</label>

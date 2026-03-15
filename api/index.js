@@ -46,6 +46,14 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
     }
 });
 
+const requireRole = (role) => (req, res, next) => {
+    if (req.admin && req.admin.role === role) {
+        next();
+    } else {
+        res.status(403).json({ message: `Access denied. ${role} role required.` });
+    }
+};
+
 app.post('/api/dispatch', asyncHandler(async (req, res) => {
     const { barcode, carrier } = req.body;
 
@@ -97,7 +105,7 @@ app.get('/api/parcels', authMiddleware, asyncHandler(async (req, res) => {
     }
 }));
 
-app.put('/api/parcels/:id', authMiddleware, asyncHandler(async (req, res) => {
+app.put('/api/parcels/:id', authMiddleware, requireRole('admin'), asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { carrier, status } = req.body;
     
@@ -113,7 +121,7 @@ app.put('/api/parcels/:id', authMiddleware, asyncHandler(async (req, res) => {
     }
 }));
 
-app.delete('/api/parcels/:id', authMiddleware, asyncHandler(async (req, res) => {
+app.delete('/api/parcels/:id', authMiddleware, requireRole('admin'), asyncHandler(async (req, res) => {
     const { id } = req.params;
     
     try {
@@ -137,7 +145,7 @@ app.get('/api/analytics', authMiddleware, asyncHandler(async (req, res) => {
     }
 }));
 
-app.get('/api/export', authMiddleware, asyncHandler(async (req, res) => {
+app.get('/api/export', authMiddleware, requireRole('admin'), asyncHandler(async (req, res) => {
     try {
         const parcels = await db.getAllParcels();
         let csv = 'ID,Barcode,Carrier,Tracking ID,Status,Timestamp\n';
@@ -152,7 +160,7 @@ app.get('/api/export', authMiddleware, asyncHandler(async (req, res) => {
     }
 }));
 
-app.get('/api/audit', authMiddleware, asyncHandler(async (req, res) => {
+app.get('/api/audit', authMiddleware, requireRole('admin'), asyncHandler(async (req, res) => {
     try {
         const logs = await db.getAuditLogs();
         res.json(logs);
@@ -161,8 +169,12 @@ app.get('/api/audit', authMiddleware, asyncHandler(async (req, res) => {
     }
 }));
 
+app.get('/api/me', authMiddleware, (req, res) => {
+    res.json({ email: req.admin.email, role: req.admin.role });
+});
+
 app.get('/api/verify-pin', authMiddleware, (req, res) => {
-    res.json({ message: 'PIN verified successfully', admin: req.admin.email });
+    res.json({ message: 'PIN verified successfully', admin: req.admin.email, role: req.admin.role });
 });
 
 // Admin Controls
@@ -173,12 +185,34 @@ app.post('/api/admin/login', asyncHandler(async (req, res) => {
     if (admin) {
         const hash = crypto.createHash('sha256').update(password).digest('hex');
         if (hash === admin.password) {
-            // Success - return the PIN so user can see it (for reset) 
-            // OR allow them to set a new one. Here we'll return the current PIN.
-            return res.json({ message: 'Login successful', pin: admin.pin });
+            return res.json({ message: 'Login successful', pin: admin.pin, role: admin.role });
         }
     }
     res.status(401).json({ message: 'Invalid email or password' });
+}));
+
+app.get('/api/admin/users', authMiddleware, requireRole('admin'), asyncHandler(async (req, res) => {
+    const users = await db.getAllAdmins();
+    res.json(users);
+}));
+
+app.post('/api/admin/users', authMiddleware, requireRole('admin'), asyncHandler(async (req, res) => {
+    const { email, password, pin, role } = req.body;
+    if (!email || !password || !pin || !role) {
+        return res.status(400).json({ message: 'All fields are required' });
+    }
+    const hash = crypto.createHash('sha256').update(password).digest('hex');
+    await db.createAdmin({ email, password: hash, pin, role });
+    res.status(201).json({ message: 'User created successfully' });
+}));
+
+app.delete('/api/admin/users/:email', authMiddleware, requireRole('admin'), asyncHandler(async (req, res) => {
+    const { email } = req.params;
+    if (email === req.admin.email) {
+        return res.status(400).json({ message: 'Cannot delete yourself' });
+    }
+    await db.deleteAdmin(email);
+    res.json({ message: 'User deleted successfully' });
 }));
 
 app.post('/api/admin/change-pin', authMiddleware, asyncHandler(async (req, res) => {

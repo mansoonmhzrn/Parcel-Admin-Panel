@@ -502,6 +502,24 @@ tr:last-child td {
 .toast.fade-out {
     animation: fadeOut 0.3s forwards;
 }
+.role-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: var(--primary-light);
+    color: var(--primary);
+    border-radius: 99px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.5rem;
+}
+
+.role-badge.staff {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
 @keyframes shake {
     0%, 100% { transform: translateX(0); }
     25% { transform: translateX(-8px); }
@@ -510,6 +528,35 @@ tr:last-child td {
 
 .shake {
     animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+.sync-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--primary);
+    padding: 0.4rem 1rem;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-top: 1rem;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    animation: pulse 2s infinite ease-in-out;
+}
+
+.sync-icon {
+    display: inline-block;
+    animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.hidden {
+    display: none !important;
 }
 
 .input-error {
