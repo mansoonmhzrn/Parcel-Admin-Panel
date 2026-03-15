@@ -96,6 +96,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function checkAuth() {
         if (adminPin) {
+            try {
+                // Proactively refresh role from the server to handle migrations or DB updates
+                const response = await fetch('/api/verify-pin', {
+                    headers: { 'x-admin-pin': adminPin }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    currentRole = data.role;
+                    sessionStorage.setItem('adminRole', currentRole);
+                }
+            } catch (e) {
+                console.warn('Role verification failed:', e);
+            }
             applyRolePermissions();
             return;
         }
