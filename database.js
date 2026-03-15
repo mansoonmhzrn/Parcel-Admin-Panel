@@ -47,6 +47,8 @@ if (isPostgres) {
         // Migration: Add role column if it doesn't exist
         try {
             await query("ALTER TABLE admins ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'staff'");
+            // Ensure default admin is actually an admin
+            await query("UPDATE admins SET role = 'admin' WHERE email = 'admin@warehouse.com'");
         } catch (e) { /* Might fail on older pg but create table handle it */ }
 
         // Seed default admin
@@ -180,7 +182,11 @@ if (isPostgres) {
             db.get("PRAGMA table_info(admins)", (err, rows) => {
                 const hasRole = rows && rows.some(r => r.name === 'role');
                 if (!hasRole) {
-                    db.run("ALTER TABLE admins ADD COLUMN role TEXT DEFAULT 'staff'");
+                    db.run("ALTER TABLE admins ADD COLUMN role TEXT DEFAULT 'staff'", () => {
+                        db.run("UPDATE admins SET role = 'admin' WHERE email = 'admin@warehouse.com'");
+                    });
+                } else {
+                    db.run("UPDATE admins SET role = 'admin' WHERE email = 'admin@warehouse.com'");
                 }
             });
 
