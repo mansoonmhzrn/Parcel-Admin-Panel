@@ -253,7 +253,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function loadUsers() {
-        if (currentRole !== 'admin') return;
         try {
             const response = await secureFetch('/api/admin/users');
             if (!response.ok) return;
@@ -551,4 +550,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     loadParcels();
+    loadUsers();
 });
