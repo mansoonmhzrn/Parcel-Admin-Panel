@@ -100,6 +100,17 @@ if (isPostgres) {
             }
             return res.rowCount;
         },
+        deleteParcelByTrackingId: async (trackingId) => {
+            // First get the parcel to log it
+            const found = await query(`SELECT id FROM parcels WHERE tracking_id = $1`, [trackingId]);
+            if (!found.rows.length) return 0;
+            const id = found.rows[0].id;
+            const res = await query(`DELETE FROM parcels WHERE tracking_id = $1`, [trackingId]);
+            if (res.rowCount > 0) {
+                await dbOps.logAction(id, 'UNDO', `Parcel ${trackingId} removed via Undo`);
+            }
+            return res.rowCount;
+        },
         logAction: async (parcelId, action, details) => {
             const timestamp = new Date().toISOString();
             const res = await query(
@@ -236,6 +247,17 @@ if (isPostgres) {
             db.run(`DELETE FROM parcels WHERE id = ?`, [id], function(err) {
                 if (err) rej(err);
                 else dbOps.logAction(id, 'DELETE', 'Deleted').then(() => res(this.changes));
+            });
+        }),
+        deleteParcelByTrackingId: (trackingId) => new Promise((res, rej) => {
+            db.get(`SELECT id FROM parcels WHERE trackingId = ?`, [trackingId], (err, row) => {
+                if (err) return rej(err);
+                if (!row) return res(0);
+                const id = row.id;
+                db.run(`DELETE FROM parcels WHERE trackingId = ?`, [trackingId], function(err2) {
+                    if (err2) return rej(err2);
+                    dbOps.logAction(id, 'UNDO', `Undo scan ${trackingId}`).then(() => res(this.changes));
+                });
             });
         }),
         logAction: (parcelId, action, details) => new Promise((res, rej) => {

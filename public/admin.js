@@ -302,10 +302,17 @@ document.addEventListener('DOMContentLoaded', () => {
     window.deleteUser = async (email) => {
         if (!confirm(`Are you sure you want to remove access for ${email}?`)) return;
         try {
-            const response = await secureFetch(`/api/admin/users/${email}`, { method: 'DELETE' });
+            const response = await secureFetch('/api/admin/users/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
             if (response.ok) {
                 showToast('Account removed');
                 loadUsers();
+            } else {
+                const err = await response.json();
+                showToast(err.message || 'Failed to remove account', 'error');
             }
         } catch (e) { console.error(e); }
     };

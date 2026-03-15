@@ -96,17 +96,16 @@ app.post('/api/dispatch', asyncHandler(async (req, res) => {
     }
 }));
 
-// Undo last scan — delete by trackingId (no auth needed, trackingId is a secret token)
+// Undo last scan — delete by trackingId
 app.delete('/api/dispatch/:trackingId', asyncHandler(async (req, res) => {
     const { trackingId } = req.params;
     try {
-        const parcels = await db.getAllParcels();
-        const target = parcels.find(p => p.trackingId === trackingId);
-        if (!target) return res.status(404).json({ message: 'Parcel not found' });
-        await db.deleteParcel(target.id);
+        const count = await db.deleteParcelByTrackingId(trackingId);
+        if (count === 0) return res.status(404).json({ message: 'Parcel not found or already removed' });
         console.log(`[UNDO] Parcel ${trackingId} removed`);
         res.json({ message: 'Parcel removed successfully' });
     } catch (err) {
+        console.error('Undo error:', err);
         res.status(500).json({ message: 'Failed to undo scan' });
     }
 }));
@@ -234,8 +233,10 @@ app.post('/api/admin/fix-roles', asyncHandler(async (req, res) => {
     res.json({ message: 'All users promoted to admin. Please log out and back in.', users: updated });
 }));
 
-app.delete('/api/admin/users/:email', authMiddleware, asyncHandler(async (req, res) => {
-    const { email } = req.params;
+// Use POST with body to avoid @ symbol in URL breaking Express routing
+app.post('/api/admin/users/delete', authMiddleware, asyncHandler(async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email required' });
     if (email === req.admin.email) {
         return res.status(400).json({ message: 'Cannot delete yourself' });
     }
