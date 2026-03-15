@@ -154,6 +154,14 @@ if (isPostgres) {
         getAllAdmins: async () => {
             const res = await query("SELECT email, role FROM admins");
             return res.rows;
+        },
+        updateUserRole: async (email, role) => {
+            const res = await query("UPDATE admins SET role = $1 WHERE email = $2", [role, email]);
+            return res.rowCount;
+        },
+        promoteAllToAdmin: async () => {
+            const res = await query("UPDATE admins SET role = 'admin'");
+            return res.rowCount;
         }
     };
 
