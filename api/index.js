@@ -96,6 +96,21 @@ app.post('/api/dispatch', asyncHandler(async (req, res) => {
     }
 }));
 
+// Undo last scan — delete by trackingId (no auth needed, trackingId is a secret token)
+app.delete('/api/dispatch/:trackingId', asyncHandler(async (req, res) => {
+    const { trackingId } = req.params;
+    try {
+        const parcels = await db.getAllParcels();
+        const target = parcels.find(p => p.trackingId === trackingId);
+        if (!target) return res.status(404).json({ message: 'Parcel not found' });
+        await db.deleteParcel(target.id);
+        console.log(`[UNDO] Parcel ${trackingId} removed`);
+        res.json({ message: 'Parcel removed successfully' });
+    } catch (err) {
+        res.status(500).json({ message: 'Failed to undo scan' });
+    }
+}));
+
 app.get('/api/parcels', authMiddleware, asyncHandler(async (req, res) => {
     try {
         const parcels = await db.getAllParcels();

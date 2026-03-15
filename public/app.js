@@ -242,6 +242,9 @@ document.addEventListener('DOMContentLoaded', () => {
         dispatchParcel(scannedBarcode.textContent, carrierSelect.value, false);
     });
 
+    let lastDispatchedTrackingId = null;
+    let undoTimer = null;
+
     async function dispatchParcel(barcode, carrier, isBatch) {
         if (!isBatch) showStatus('Processing dispatch...', 'info');
         isProcessing = true;
@@ -256,7 +259,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (response.ok) {
+                lastDispatchedTrackingId = data.trackingId;
                 showStatus(`Successfully dispatched! ${data.trackingId}`, 'success');
+                showUndoToast(data.trackingId);
                 finishDispatch(isBatch);
             } else if (response.status === 409) {
                 showStatus(data.message, 'error');
@@ -269,8 +274,65 @@ document.addEventListener('DOMContentLoaded', () => {
             // Save to offline queue
             await addToQueue({ barcode, carrier, timestamp: new Date().toISOString() });
             showStatus('Offline: Scan saved to local queue', 'info');
-            syncQueue(); // Try to show badge
+            syncQueue();
             finishDispatch(isBatch);
+        }
+    }
+
+    function showUndoToast(trackingId) {
+        // Clear any existing undo toast
+        const existing = document.getElementById('undo-toast');
+        if (existing) existing.remove();
+        if (undoTimer) clearInterval(undoTimer);
+
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.id = 'undo-toast';
+        toast.className = 'toast undo-toast';
+        toast.innerHTML = `
+            <span>📦 Dispatched</span>
+            <button id="undo-btn" class="undo-btn">↩ Undo <span id="undo-countdown">10</span>s</button>
+        `;
+        container.appendChild(toast);
+
+        let seconds = 10;
+        const countdownEl = toast.querySelector('#undo-countdown');
+        const progressBar = document.createElement('div');
+        progressBar.className = 'undo-progress';
+        toast.appendChild(progressBar);
+
+        undoTimer = setInterval(() => {
+            seconds--;
+            if (countdownEl) countdownEl.textContent = seconds;
+            progressBar.style.width = `${(seconds / 10) * 100}%`;
+            if (seconds <= 0) {
+                clearInterval(undoTimer);
+                toast.classList.add('fade-out');
+                setTimeout(() => toast.remove(), 300);
+            }
+        }, 1000);
+
+        toast.querySelector('#undo-btn').addEventListener('click', () => {
+            clearInterval(undoTimer);
+            undoLastScan(trackingId, toast);
+        });
+    }
+
+    async function undoLastScan(trackingId, toastEl) {
+        try {
+            const response = await fetch(`/api/dispatch/${encodeURIComponent(trackingId)}`, {
+                method: 'DELETE'
+            });
+            if (response.ok) {
+                showToast('✅ Scan undone successfully', 'success');
+            } else {
+                showToast('Could not undo scan', 'error');
+            }
+        } catch (e) {
+            showToast('Network error during undo', 'error');
+        } finally {
+            toastEl.classList.add('fade-out');
+            setTimeout(() => toastEl.remove(), 300);
         }
     }
 
