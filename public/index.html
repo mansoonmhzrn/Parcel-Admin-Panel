@@ -26,7 +26,16 @@
             <div id="live-clock" class="digital-clock">00:00:00</div>
             <h1>Parcel Dispatch</h1>
             <p>Scan and track warehouse inventory</p>
-            
+
+            <!-- Staff Login Status -->
+            <div id="staff-logged-out" style="margin-top: 0.75rem;">
+                <button id="staff-login-btn" class="secondary-btn" style="width: auto; padding: 0.5rem 1.25rem; font-size: 0.8rem;">🔑 Staff Login</button>
+            </div>
+            <div id="staff-logged-in" class="hidden" style="margin-top: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
+                <span id="staff-name-badge" class="role-badge">👤 Staff</span>
+                <button id="staff-logout-btn" class="secondary-btn" style="width: auto; padding: 0.4rem 0.9rem; font-size: 0.75rem; background: #fef2f2; color: #b91c1c; border-color: #fee2e2;">Logout</button>
+            </div>
+
             <div id="sync-badge" class="sync-badge hidden">
                 <span class="sync-icon">🔄</span>
                 <span id="sync-count">0</span> pending scans
@@ -69,9 +78,24 @@
         </main>
     </div>
     
+    <!-- Staff Login Modal -->
+    <div id="staff-auth-modal" class="modal hidden" style="z-index: 3000;">
+        <div class="modal-content glass" style="max-width: 380px; text-align: center;">
+            <div style="font-size: 3rem; margin-bottom: 0.75rem;">👷</div>
+            <h2>Staff Login</h2>
+            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1.5rem;">Enter your assigned 4-digit PIN to begin scanning.</p>
+            <div class="form-group">
+                <input type="password" id="staff-pin-input" placeholder="••••" maxlength="4"
+                    style="width:100%; padding:1rem; border-radius:12px; border:2px solid var(--border); text-align:center; font-size:1.5rem; letter-spacing:0.5rem;">
+            </div>
+            <button id="staff-pin-submit" class="primary-btn" style="margin-top: 1rem;">Sign In</button>
+            <button id="staff-pin-cancel" class="secondary-btn" style="margin-top: 0.5rem;">Cancel</button>
+        </div>
+    </div>
+
     <footer style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 4rem;">
         <p><strong>Warehouse Management System v1.2.4</strong></p>
-        <p>© 2026 Logistics & Inventory Solutions. Proprietary and Confidential.</p>
+        <p>© 2026 Logistics &amp; Inventory Solutions. Proprietary and Confidential.</p>
         <p style="margin-top: 0.5rem; opacity: 0.7;">This system contains secure data intended for authorized warehouse staff only. Misuse is prohibited.</p>
     </footer>
 

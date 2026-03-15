@@ -12,6 +12,82 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusMessage = document.getElementById('status-message');
     const batchMode = document.getElementById('batch-mode');
 
+    // --- Staff Login ---
+    let staffPin = sessionStorage.getItem('staffPin');
+    let staffEmail = sessionStorage.getItem('staffEmail');
+
+    const staffAuthModal = document.getElementById('staff-auth-modal');
+    const staffPinInput = document.getElementById('staff-pin-input');
+    const staffNameBadge = document.getElementById('staff-name-badge');
+
+    function updateStaffUI() {
+        if (staffPin && staffEmail) {
+            document.getElementById('staff-logged-out').classList.add('hidden');
+            document.getElementById('staff-logged-in').classList.remove('hidden');
+            staffNameBadge.textContent = `👤 ${staffEmail}`;
+        } else {
+            document.getElementById('staff-logged-out').classList.remove('hidden');
+            document.getElementById('staff-logged-in').classList.add('hidden');
+        }
+    }
+
+    document.getElementById('staff-login-btn').addEventListener('click', () => {
+        staffPinInput.value = '';
+        staffPinInput.classList.remove('input-error');
+        staffAuthModal.classList.remove('hidden');
+        setTimeout(() => staffPinInput.focus(), 100);
+    });
+
+    document.getElementById('staff-pin-cancel').addEventListener('click', () => {
+        staffAuthModal.classList.add('hidden');
+    });
+
+    async function submitStaffPin() {
+        const pin = staffPinInput.value;
+        if (!pin || pin.length < 4) return;
+
+        try {
+            const response = await fetch('/api/verify-pin', {
+                headers: { 'x-admin-pin': pin }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                staffPin = pin;
+                staffEmail = data.admin;
+                sessionStorage.setItem('staffPin', staffPin);
+                sessionStorage.setItem('staffEmail', staffEmail);
+                staffAuthModal.classList.add('hidden');
+                updateStaffUI();
+                showToast(`Welcome, ${staffEmail}!`, 'success');
+            } else {
+                const modalContent = staffAuthModal.querySelector('.modal-content');
+                modalContent.classList.add('shake');
+                staffPinInput.classList.add('input-error');
+                setTimeout(() => { modalContent.classList.remove('shake'); }, 500);
+                staffPinInput.value = '';
+                staffPinInput.focus();
+                showToast('Invalid PIN. Please try again.', 'error');
+            }
+        } catch (e) {
+            showToast('Network error. Check connection.', 'error');
+        }
+    }
+
+    document.getElementById('staff-pin-submit').addEventListener('click', submitStaffPin);
+    staffPinInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') submitStaffPin(); });
+
+    document.getElementById('staff-logout-btn').addEventListener('click', () => {
+        staffPin = null;
+        staffEmail = null;
+        sessionStorage.removeItem('staffPin');
+        sessionStorage.removeItem('staffEmail');
+        updateStaffUI();
+        showToast('Logged out successfully.', 'success');
+    });
+
+    updateStaffUI();
+
     // Synth Audio Utility
     function playSound(type) {
         try {
